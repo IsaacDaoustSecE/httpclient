@@ -11,6 +11,7 @@ class HTTPResponse:
         self.status_message = ""
         self.headers = {}
         self.body = ""
+        self.raw_body = b""
         self.cookies = {}
         self.parse_response()
 
@@ -44,6 +45,7 @@ class HTTPResponse:
             if "set-cookie" in self.headers:
                 self.parse_cookies(self.headers["set-cookie"])
 
+            self.raw_body = body_section
             self.body = body_section.decode("utf-8", errors="ignore")
 
         except Exception as e:
@@ -193,3 +195,14 @@ class HttpClient:
 
     def get_cookies(self) -> Dict[str, str]:
         return self.cookies.copy()
+
+    def download(self, url: str, filename=None):
+        if filename is None:
+            parsed = urlparse(url)
+            filename = parsed.path.split("/")[-1]
+            if not filename:
+                filename = "download"
+
+        response = self.send_request(url)
+        with open(filename, "wb") as f:
+            f.write(response.raw_body)
